@@ -1,0 +1,19 @@
+{% extends "students/base.html" %}
+
+{% block page_title %}Student Records{% endblock %}
+
+{% block content %}
+<!-- STUDENTS -->
+<div id="page-students" class="page">
+  <div class="card">
+    <div class="section-header">
+      <div class="section-title">Student records</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-student')">+ Add Student</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Student</th><th>Student ID</th><th>Email</th><th>Year</th><th>Course</th><th>Status</th><th></th></tr></thead>
+      <tbody id="student-table"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

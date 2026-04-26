@@ -1,0 +1,21 @@
+{% extends "students/base.html" %}
+
+{% block page_title %}Tuition Fee Management{% endblock %}
+
+{% block content %}
+<!-- TUITION -->
+<div id="page-tuition" class="page">
+  <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+    <div class="metric-card"><div class="metric-label">Total assessed</div><div class="metric-val" id="t-assessed">—</div></div>
+    <div class="metric-card"><div class="metric-label">Total collected</div><div class="metric-val" style="color:var(--green)" id="t-paid">—</div></div>
+    <div class="metric-card"><div class="metric-label">Outstanding</div><div class="metric-val" style="color:var(--red)" id="t-balance">—</div></div>
+  </div>
+  <div class="card">
+    <div class="section-title" style="margin-bottom:14px">Tuition fee records</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Student</th><th>Course</th><th>Total fee</th><th>Paid</th><th>Balance</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tuition-table"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

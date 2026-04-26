@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Student Management System{% endblock %}</title>
+{% load static %}
+<link rel="stylesheet" href="{% static 'students/css/style.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">S</div>
+        <div class="logo-text">Student Management System</div>
+      </div>
+      <div class="logo-sub"></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Main</div>
+      <div class="nav-item active" onclick="goTo('dashboard',this)"><span class="nav-icon">⬡</span> Dashboard</div>
+      <div class="nav-item" onclick="goTo('students',this)"><span class="nav-icon">◎</span> Students</div>
+      <div class="nav-item" onclick="goTo('courses',this)"><span class="nav-icon">▦</span> Courses</div>
+      <div class="nav-section">Academic</div>
+      <div class="nav-item" onclick="goTo('enrollment',this)"><span class="nav-icon">✦</span> Enrollment</div>
+      <div class="nav-item" onclick="goTo('tuition',this)"><span class="nav-icon">◈</span> Tuition Fees</div>
+      <div class="nav-section">Output</div>
+      <div class="nav-item" onclick="goTo('reports',this)"><span class="nav-icon">▤</span> Reports</div>
+    </nav>
+    <div class="sidebar-footer">
+      <strong></strong>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="page-title">{% block page_title %}Dashboard{% endblock %}</div>
+        <div class="api-status">
+          <div class="api-dot" id="api-dot"></div>
+          <span id="api-label">checking...</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <input class="search-box" type="text" placeholder="Search students..." oninput="liveSearch(this.value)" id="global-search">
+        <button class="btn btn-primary" onclick="openModal('modal-student')">+ Add Student</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="metrics-grid">
+          <div class="metric-card"><div class="metric-label">Students</div><div class="metric-val" id="m-students">—</div><div class="metric-sub">registered</div></div>
+          <div class="metric-card"><div class="metric-label">Courses</div><div class="metric-val" id="m-courses">—</div><div class="metric-sub">active</div></div>
+          <div class="metric-card"><div class="metric-label">Enrollments</div><div class="metric-val" id="m-enrollments">—</div><div class="metric-sub">this term</div></div>
+          <div class="metric-card"><div class="metric-label">Outstanding</div><div class="metric-val" id="m-balance" style="color:var(--red)">—</div><div class="metric-sub">unpaid balance</div></div>
+        </div>
+        <div class="two-col" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-title">Recent students</div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Name</th><th>ID</th><th>Status</th></tr></thead>
+              <tbody id="dash-students"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+            </table></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Enrollment by course</div>
+            <div id="dash-bars"><div class="loading">Loading...</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Fee collection overview</div>
+          <div id="dash-fees"><div class="loading">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- STUDENTS -->
+      <div id="page-students" class="page">
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Student records</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-student')">+ Add Student</button>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Student</th><th>Student ID</th><th>Email</th><th>Year</th><th>Course</th><th>Status</th><th></th></tr></thead>
+            <tbody id="student-table"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- COURSES -->
+      <div id="page-courses" class="page">
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Course management</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-course')">+ Add Course</button>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Code</th><th>Course name</th><th>Units</th><th>Fee/unit</th><th>Total fee</th><th>Enrolled</th><th></th></tr></thead>
+            <tbody id="course-table"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- ENROLLMENT -->
+      <div id="page-enrollment" class="page">
+        <div class="card">
+          <div class="tab-bar">
+            <div class="tab active" onclick="enrollTab('list',this)">Enrollment list</div>
+            <div class="tab" onclick="enrollTab('new',this)">New enrollment</div>
+          </div>
+          <div id="enroll-list-view">
+            <div class="form-group" style="max-width:420px;margin-bottom:14px;">
+              <label class="form-label">Search enrollments</label>
+              <input class="form-input search-box" id="enroll-list-search" type="search" placeholder="Search student, course, term, or status" oninput="renderEnrollment()" />
+            </div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Student</th><th>Course</th><th>Date enrolled</th><th>Term</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="enroll-table"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
+            </table></div>
+          </div>
+          <div id="enroll-new-view" style="display:none">
+            <div class="form-grid" style="max-width:480px">
+              <div class="form-group">
+                <label class="form-label">Search student</label>
+                <input class="form-input search-box" id="enroll-student-search" type="search" placeholder="Filter student list" oninput="populateStudentSelect('enroll-student-sel', this.value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Student</label>
+                <select class="form-select" id="enroll-student-sel"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Course</label>
+                <select class="form-select" id="enroll-course-sel"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Term</label>
+                <select class="form-select" id="enroll-term">
+                  <option>1st Semester 2025-26</option>
+                  <option>2nd Semester 2025-26</option>
+                  <option>Summer 2026</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:16px">
+              <button class="btn btn-primary" onclick="submitEnrollment()">Enroll student</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TUITION -->
+      <div id="page-tuition" class="page">
+        <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+          <div class="metric-card"><div class="metric-label">Total assessed</div><div class="metric-val" id="t-assessed">—</div></div>
+          <div class="metric-card"><div class="metric-label">Total collected</div><div class="metric-val" style="color:var(--green)" id="t-paid">—</div></div>
+          <div class="metric-card"><div class="metric-label">Outstanding</div><div class="metric-val" style="color:var(--red)" id="t-balance">—</div></div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="margin-bottom:14px">Tuition fee records</div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Student</th><th>Course</th><th>Total fee</th><th>Paid</th><th>Balance</th><th>Status</th><th></th></tr></thead>
+            <tbody id="tuition-table"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="page-reports" class="page">
+        <div class="two-col" style="margin-bottom:16px">
+          <div class="card">
+            <div class="section-title" style="margin-bottom:12px">Enrollment summary</div>
+            <div id="report-enroll"><div class="loading">Loading...</div></div>
+          </div>
+          <div class="card">
+            <div class="section-title" style="margin-bottom:12px">Fee collection summary</div>
+            <div id="report-fees"><div class="loading">Loading...</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Full student roster</div>
+            <button class="btn btn-sm" onclick="printReport()">Print report</button>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Name</th><th>Student ID</th><th>Course</th><th>Year</th><th>Status</th><th>Balance</th></tr></thead>
+            <tbody id="report-table"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add/Edit Student -->
+<div class="modal-overlay" id="modal-student" onclick="if(event.target===this)closeModal('modal-student')">
+  <div class="modal">
+    <div class="modal-title" id="modal-student-title">Add new student</div>
+    <input type="hidden" id="edit-student-id">
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">First name</label><input class="form-input" id="s-fname" placeholder="Juan"></div>
+      <div class="form-group"><label class="form-label">Last name</label><input class="form-input" id="s-lname" placeholder="dela Cruz"></div>
+      <div class="form-group"><label class="form-label">Student ID</label><input class="form-input" id="s-sid" placeholder="2025-0001"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="s-email" placeholder="juan@email.com" type="email"></div>
+      <div class="form-group"><label class="form-label">Year level</label>
+        <select class="form-select" id="s-year">
+          <option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-select" id="s-status">
+          <option>Active</option><option>Irregular</option><option>LOA</option><option>Graduated</option>
+        </select>
+      </div>
+      <div class="form-group full"><label class="form-label">Course</label>
+        <select class="form-select" id="s-course"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-student')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitStudent()">Save student</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Course -->
+<div class="modal-overlay" id="modal-course" onclick="if(event.target===this)closeModal('modal-course')">
+  <div class="modal">
+    <div class="modal-title">Add new course</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Course code</label><input class="form-input" id="c-code" placeholder="BSIT"></div>
+      <div class="form-group"><label class="form-label">Course name</label><input class="form-input" id="c-name" placeholder="BS Information Technology"></div>
+      <div class="form-group"><label class="form-label">Units</label><input class="form-input" type="number" id="c-units" value="24"></div>
+      <div class="form-group"><label class="form-label">Fee per unit (₱)</label><input class="form-input" type="number" id="c-fee" value="1200"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-course')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitCourse()">Save course</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Pay -->
+<div class="modal-overlay" id="modal-pay" onclick="if(event.target===this)closeModal('modal-pay')">
+  <div class="modal">
+    <div class="modal-title">Record payment</div>
+    <div id="pay-info" style="font-size:13px;color:var(--text2);margin-bottom:16px;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);font-family:var(--mono)"></div>
+    <div class="form-group" style="max-width:220px">
+      <label class="form-label">Amount (₱)</label>
+      <input class="form-input" type="number" id="pay-amount" placeholder="0.00">
+    </div>
+    <input type="hidden" id="pay-tuition-id">
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-pay')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPayment()">Confirm payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const API = '/api';
+
+// ─── State ───────────────────────────────────────────────────
+let state = { students: [], courses: [], enrollments: [], tuition: [] };
+
+// ─── API helpers ─────────────────────────────────────────────
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  if (!res.ok) {
+    let errorText = `${res.status} ${res.statusText}`;
+    try {
+      const errData = await res.json();
+      if (typeof errData === 'object' && errData !== null) {
+        errorText = JSON.stringify(errData);
+      }
+    } catch (_){ }
+    throw new Error(errorText);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+async function loadAll() {
+  try {
+    const [students, courses, enrollments, tuition] = await Promise.all([
+      api('/students/'), api('/courses/'), api('/enrollments/'), api('/tuition/')
+    ]);
+    state.students = students;
+    state.courses = courses;
+    state.enrollments = enrollments;
+    state.tuition = tuition;
+    setApiStatus(true);
+  } catch (e) {
+    setApiStatus(false);
+    toast('Cannot reach API. Is Django running?', 'error');
+  }
+}
+
+function setApiStatus(online) {
+  document.getElementById('api-dot').className = 'api-dot' + (online ? ' online' : '');
+  document.getElementById('api-label').textContent = online ? 'API online' : 'API offline';
+}
+
+// ─── Check API on load ────────────────────────────────────────
+async function checkApi() {
+  try { await fetch(API + '/students/'); setApiStatus(true); }
+  catch { setApiStatus(false); }
+}
+
+// ─── Toast ───────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = (type === 'success' ? '✓  ' : '✕  ') + msg;
+  el.className = `toast ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = 'toast hidden', 3500);
+}
+
+// ─── Navigation ───────────────────────────────────────────────
+const pageTitles = { dashboard:'Dashboard', students:'Student Records', courses:'Course Management', enrollment:'Enrollment Module', tuition:'Tuition Fee Management', reports:'Reports' };
+async function goTo(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById('page-' + page);
+  if (pageEl) pageEl.classList.add('active');
+  if (el && el.classList) el.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[page] || page;
+  await loadAll();
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'students') renderStudents();
+  if (page === 'courses') renderCourses();
+  if (page === 'enrollment') renderEnrollment();
+  if (page === 'tuition') renderTuition();
+  if (page === 'reports') renderReports();
+}
+
+function liveSearch(val) {
+  goTo('students', document.querySelector('[onclick*="students"]'));
+  setTimeout(() => renderStudents(val), 100);
+}
+
+// ─── Modals ───────────────────────────────────────────────────
+function openModal(id, reset=true) {
+  if (id === 'modal-student') {
+    document.getElementById('modal-student-title').textContent = 'Add new student';
+    if (reset) {
+      document.getElementById('edit-student-id').value = '';
+      ['s-fname','s-lname','s-sid','s-email'].forEach(i => document.getElementById(i).value = '');
+      document.getElementById('s-year').value = '1st Year';
+      document.getElementById('s-status').value = 'Active';
+    }
+    populateCourseSelect('s-course');
+  }
+  if (id === 'modal-course') {
+    ['c-code','c-name'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('c-units').value = 24;
+    document.getElementById('c-fee').value = 1200;
+  }
+  const modal = document.getElementById(id);
+  if (modal && modal.classList) modal.classList.add('show');
+}
+function closeModal(id) { const modal = document.getElementById(id); if (modal && modal.classList) modal.classList.remove('show'); }
+
+function populateCourseSelect(selId) {
+  const sel = document.getElementById(selId);
+  sel.innerHTML = state.courses.map(c => `<option value="${c.id}">${c.code} — ${c.name}</option>`).join('');
+}
+
+// ─── Helpers ─────────────────────────────────────────────────
+function initials(s) { return ((s.first_name||'?')[0] + (s.last_name||'?')[0]).toUpperCase(); }
+function peso(n) { return '₱' + Number(n).toLocaleString('en-PH', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function statusBadge(s) {
+  const map = { Active:'badge-green', Enrolled:'badge-blue', Cancelled:'badge-red', Dropped:'badge-red', Irregular:'badge-amber', LOA:'badge-amber', Graduated:'badge-blue', Unpaid:'badge-red', Partial:'badge-amber', Paid:'badge-green' };
+  return `<span class="badge ${map[s]||'badge-blue'}">${s}</span>`;
+}
+function getCourse(id) { return state.courses.find(c => c.id == id) || {}; }
+function getTuition(studentId) { return state.tuition.find(t => t.student == studentId); }
+function totalFee(course) { return course ? Number(course.units) * Number(course.fee_per_unit) : 0; }
+
+// ─── Dashboard ────────────────────────────────────────────────
+function renderDashboard() {
+  document.getElementById('m-students').textContent = state.students.length;
+  document.getElementById('m-courses').textContent = state.courses.length;
+  document.getElementById('m-enrollments').textContent = state.enrollments.length;
+
+  const totalBalance = state.tuition.reduce((a, t) => {
+    const c = getCourse(state.students.find(s => s.id == t.student)?.course);
+    return a + Math.max(0, totalFee(c) - Number(t.amount_paid));
+  }, 0);
+  document.getElementById('m-balance').textContent = peso(totalBalance);
+
+  // Recent students
+  document.getElementById('dash-students').innerHTML = state.students.slice(-5).reverse().map(s =>
+    `<tr><td><span class="avatar">${initials(s)}</span>${s.first_name} ${s.last_name}</td><td class="mono" style="color:var(--text2);font-size:12px">${s.student_id}</td><td>${statusBadge(s.status)}</td></tr>`
+  ).join('') || `<tr><td colspan="3" class="empty">No students yet</td></tr>`;
+
+  // Enrollment bars
+  const counts = {};
+  state.enrollments.forEach(e => counts[e.course] = (counts[e.course]||0)+1);
+  const maxC = Math.max(...Object.values(counts), 1);
+  document.getElementById('dash-bars').innerHTML = state.courses.map(c => {
+    const n = counts[c.id] || 0;
+    return `<div class="bar-row"><div class="bar-label"><span>${c.code}</span><span class="mono">${n}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxC*100)}%"></div></div></div>`;
+  }).join('') || '<div class="empty">No data</div>';
+
+  // Fee overview
+  const totalA = state.tuition.reduce((a,t) => {
+    const s = state.students.find(x => x.id == t.student);
+    const c = getCourse(s?.course);
+    return a + totalFee(c);
+  }, 0);
+  const totalP = state.tuition.reduce((a,t) => a + Number(t.amount_paid), 0);
+  const totalB = Math.max(0, totalA - totalP);
+  const pct = totalA > 0 ? Math.round(totalP/totalA*100) : 0;
+  document.getElementById('dash-fees').innerHTML = `
+    <div class="bar-row"><div class="bar-label"><span>Assessed</span><span class="mono">${peso(totalA)}</span></div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></div>
+    <div class="bar-row"><div class="bar-label"><span>Collected</span><span class="mono">${peso(totalP)}</span></div><div class="bar-track"><div class="bar-fill green" style="width:${pct}%"></div></div></div>
+    <div class="bar-row"><div class="bar-label"><span>Outstanding</span><span class="mono" style="color:var(--red)">${peso(totalB)}</span></div><div class="bar-track"><div class="bar-fill red" style="width:${100-pct}%"></div></div></div>
+    <div style="font-size:12px;color:var(--text3);margin-top:8px;font-family:var(--mono)">Collection rate: ${pct}%</div>`;
+}
+
+// ─── Students ─────────────────────────────────────────────────
+function renderStudents(filter='') {
+  const f = filter.toLowerCase();
+  const list = state.students.filter(s => !f || (s.first_name+s.last_name+s.student_id+s.email).toLowerCase().includes(f));
+  document.getElementById('student-table').innerHTML = list.map(s => {
+    const c = getCourse(s.course);
+    return `<tr>
+      <td><span class="avatar">${initials(s)}</span>${s.first_name} ${s.last_name}</td>
+      <td class="mono" style="font-size:12px;color:var(--text2)">${s.student_id}</td>
+      <td style="color:var(--text2)">${s.email}</td>
+      <td>${s.year_level}</td>
+      <td>${c.code||'—'}</td>
+      <td>${statusBadge(s.status)}</td>
+      <td><button class="btn btn-sm" onclick="editStudent(${s.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="deleteStudent(${s.id})">Delete</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="empty"><div class="empty-icon">◎</div>No students found</td></tr>`;
+}
+
+async function submitStudent() {
+  const editId = document.getElementById('edit-student-id').value;
+  const data = {
+    first_name: document.getElementById('s-fname').value.trim(),
+    last_name: document.getElementById('s-lname').value.trim(),
+    student_id: document.getElementById('s-sid').value.trim(),
+    email: document.getElementById('s-email').value.trim(),
+    year_level: document.getElementById('s-year').value,
+    status: document.getElementById('s-status').value,
+    course: parseInt(document.getElementById('s-course').value, 10)
+  };
+  if (!data.first_name || !data.last_name || !data.student_id) return toast('First name, last name, and student ID are required', 'error');
+  try {
+    if (editId) await api(`/students/${editId}/`, 'PUT', data);
+    else await api('/students/', 'POST', data);
+    closeModal('modal-student');
+    toast(editId ? 'Student updated' : 'Student added');
+    await loadAll();
+    renderStudents();
+  } catch (e) { toast(`Error saving student: ${e.message}`, 'error'); }
+}
+
+async function editStudent(id) {
+  const s = state.students.find(x => x.id == id);
+  if (!s) return;
+  openModal('modal-student', false);
+  document.getElementById('modal-student-title').textContent = 'Edit student';
+  document.getElementById('edit-student-id').value = id;
+  document.getElementById('s-fname').value = s.first_name;
+  document.getElementById('s-lname').value = s.last_name;
+  document.getElementById('s-sid').value = s.student_id;
+  document.getElementById('s-email').value = s.email;
+  document.getElementById('s-year').value = s.year_level;
+  document.getElementById('s-status').value = s.status;
+  document.getElementById('s-course').value = s.course;
+}
+
+async function deleteStudent(id) {
+  if (!confirm('Delete this student?')) return;
+  try {
+    await api(`/students/${id}/`, 'DELETE');
+    toast('Student deleted');
+    await loadAll();
+    renderStudents();
+  } catch (e) { toast('Error deleting student', 'error'); }
+}
+
+// ─── Courses ──────────────────────────────────────────────────
+function renderCourses() {
+  document.getElementById('course-table').innerHTML = state.courses.map(c => {
+    const enrolled = state.enrollments.filter(e => e.course == c.id).length;
+    return `<tr>
+      <td class="mono">${c.code}</td>
+      <td>${c.name}</td>
+      <td class="mono">${c.units}</td>
+      <td class="mono">${peso(c.fee_per_unit)}</td>
+      <td class="mono">${peso(totalFee(c))}</td>
+      <td>${enrolled}</td>
+      <td><button class="btn btn-sm" onclick="editCourse(${c.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id})">Delete</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="empty"><div class="empty-icon">▦</div>No courses yet</td></tr>`;
+}
+
+async function submitCourse() {
+  const data = {
+    code: document.getElementById('c-code').value.trim().toUpperCase(),
+    name: document.getElementById('c-name').value.trim(),
+    units: Number(document.getElementById('c-units').value),
+    fee_per_unit: Number(document.getElementById('c-fee').value)
+  };
+  if (!data.code || !data.name) return toast('Course code and name are required', 'error');
+  try {
+    await api('/courses/', 'POST', data);
+    closeModal('modal-course');
+    toast('Course added');
+    await loadAll();
+    renderCourses();
+  } catch (e) { toast('Error saving course', 'error'); }
+}
+
+async function editCourse(id) {
+  const c = state.courses.find(x => x.id == id);
+  if (!c) return;
+  document.getElementById('c-code').value = c.code;
+  document.getElementById('c-name').value = c.name;
+  document.getElementById('c-units').value = c.units;
+  document.getElementById('c-fee').value = c.fee_per_unit;
+  openModal('modal-course');
+  // Replace submit handler
+  const btn = document.querySelector('#modal-course .btn-primary');
+  btn.onclick = async () => {
+    const data = {
+      code: document.getElementById('c-code').value.trim().toUpperCase(),
+      name: document.getElementById('c-name').value.trim(),
+      units: Number(document.getElementById('c-units').value),
+      fee_per_unit: Number(document.getElementById('c-fee').value)
+    };
+    try {
+      await api(`/courses/${id}/`, 'PUT', data);
+      closeModal('modal-course');
+      toast('Course updated');
+      await loadAll();
+      renderCourses();
+    } catch (e) { toast('Error updating course', 'error'); }
+  };
+}
+
+async function deleteCourse(id) {
+  if (!confirm('Delete this course?')) return;
+  try {
+    await api(`/courses/${id}/`, 'DELETE');
+    toast('Course deleted');
+    await loadAll();
+    renderCourses();
+  } catch (e) { toast('Error deleting course', 'error'); }
+}
+
+// ─── Enrollment ───────────────────────────────────────────────
+function getFilteredEnrollments() {
+  const keyword = document.getElementById('enroll-list-search')?.value.trim().toLowerCase() || '';
+  if (!keyword) return state.enrollments;
+  return state.enrollments.filter(e => {
+    const student = state.students.find(x => x.id == e.student);
+    const course = getCourse(e.course);
+    const text = [
+      student && `${student.first_name} ${student.last_name}`,
+      student?.student_id,
+      course && `${course.code} ${course.name}`,
+      e.term,
+      e.status
+    ].filter(Boolean).join(' ').toLowerCase();
+    return text.includes(keyword);
+  });
+}
+
+function populateStudentSelect(id, query = '') {
+  const select = document.getElementById(id);
+  const filter = query.trim().toLowerCase();
+  select.innerHTML = state.students
+    .filter(s => !filter || `${s.first_name} ${s.last_name} ${s.student_id}`.toLowerCase().includes(filter))
+    .map(s => `<option value="${s.id}">${s.first_name} ${s.last_name} (${s.student_id})</option>`)
+    .join('');
+}
+
+function renderEnrollment() {
+  const enrollments = getFilteredEnrollments();
+  document.getElementById('enroll-table').innerHTML = enrollments.map(e => {
+    const s = state.students.find(x => x.id == e.student) || {};
+    const c = getCourse(e.course) || {};
+    return `<tr>
+      <td><span class="avatar">${initials(s)}</span>${s.first_name || 'Unknown'} ${s.last_name || ''}</td>
+      <td>${c.code || 'N/A'} — ${c.name || ''}</td>
+      <td class="mono">${e.date_enrolled ? new Date(e.date_enrolled).toLocaleDateString() : '—'}</td>
+      <td>${e.term || '—'}</td>
+      <td>${statusBadge(e.status)}</td>
+      <td class="cell-actions">
+        ${e.status === 'Cancelled'
+          ? `<button class="btn btn-sm btn-success" onclick="restoreEnrollment(${e.id})">Re-enroll</button>`
+          : `<button class="btn btn-sm btn-warning" onclick="cancelEnrollment(${e.id})">Cancel</button>`}
+        <button class="btn btn-sm btn-danger" onclick="deleteEnrollment(${e.id})">Delete enrollment</button>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" class="empty"><div class="empty-icon">✦</div>No enrollments yet</td></tr>`;
+  populateCourseSelect('enroll-course-sel');
+  populateStudentSelect('enroll-student-sel', document.getElementById('enroll-student-search')?.value || '');
+}
+
+function enrollTab(tab, el) {
+  document.querySelectorAll('#page-enrollment .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('enroll-list-view').style.display = tab === 'list' ? 'block' : 'none';
+  document.getElementById('enroll-new-view').style.display = tab === 'new' ? 'block' : 'none';
+}
+
+async function submitEnrollment() {
+  const data = {
+    student: parseInt(document.getElementById('enroll-student-sel').value),
+    course: parseInt(document.getElementById('enroll-course-sel').value),
+    term: document.getElementById('enroll-term').value,
+    status: 'Enrolled'
+  };
+  if (!data.student || !data.course) return toast('Student and course are required', 'error');
+  try {
+    await api('/enrollments/', 'POST', data);
+    toast('Student enrolled');
+    await loadAll();
+    renderEnrollment();
+    const tabEl = document.querySelector('#page-enrollment .tab');
+    if (tabEl) enrollTab('list', tabEl);
+  } catch (e) { console.error('Enrollment failed', e); toast(`Error enrolling student: ${e.message}`, 'error'); }
+}
+
+async function cancelEnrollment(id) {
+  const enrollment = state.enrollments.find(e => e.id == id);
+  if (!enrollment) return toast('Enrollment not found', 'error');
+  if (!confirm('Cancel this enrollment?')) return;
+  try {
+    await api(`/enrollments/${id}/`, 'PATCH', { status: 'Cancelled' });
+    toast('Enrollment cancelled');
+    await loadAll();
+    renderEnrollment();
+  } catch (e) { toast('Error cancelling enrollment', 'error'); }
+}
+
+async function restoreEnrollment(id) {
+  const enrollment = state.enrollments.find(e => e.id == id);
+  if (!enrollment) return toast('Enrollment not found', 'error');
+  if (!confirm('Re-enroll this student?')) return;
+  try {
+    await api(`/enrollments/${id}/`, 'PATCH', { status: 'Enrolled' });
+    toast('Enrollment restored');
+    await loadAll();
+    renderEnrollment();
+  } catch (e) { toast('Error restoring enrollment', 'error'); }
+}
+
+async function deleteEnrollment(id) {
+  const enrollment = state.enrollments.find(e => e.id == id);
+  if (!enrollment) return toast('Enrollment not found', 'error');
+  if (!confirm('Delete this enrollment?')) return;
+
+  try {
+    await api(`/enrollments/${id}/`, 'DELETE');
+    toast('Enrollment deleted');
+    await loadAll();
+    renderEnrollment();
+  } catch (e) {
+    console.error('Delete enrollment failed', e);
+    toast('Error deleting enrollment', 'error');
+  }
+}
+
+// ─── Tuition ──────────────────────────────────────────────────
+function renderTuition() {
+  const totalA = state.tuition.reduce((a,t) => {
+    const s = state.students.find(x => x.id == t.student);
+    const c = getCourse(s?.course);
+    return a + totalFee(c);
+  }, 0);
+  const totalP = state.tuition.reduce((a,t) => a + Number(t.amount_paid), 0);
+  const totalB = Math.max(0, totalA - totalP);
+  document.getElementById('t-assessed').textContent = peso(totalA);
+  document.getElementById('t-paid').textContent = peso(totalP);
+  document.getElementById('t-balance').textContent = peso(totalB);
+
+  document.getElementById('tuition-table').innerHTML = state.tuition.map(t => {
+    const s = state.students.find(x => x.id == t.student);
+    const c = getCourse(s?.course);
+    const assessed = totalFee(c);
+    const paid = Number(t.amount_paid);
+    const balance = Math.max(0, assessed - paid);
+    const status = paid === 0 ? 'Unpaid' : paid < assessed ? 'Partial' : 'Paid';
+    return `<tr>
+      <td><span class="avatar">${initials(s)}</span>${s.first_name} ${s.last_name}</td>
+      <td>${c.code||'—'}</td>
+      <td class="mono">${peso(assessed)}</td>
+      <td class="mono">${peso(paid)}</td>
+      <td class="mono" style="color:${balance>0?'var(--red)':'var(--green)'}">${peso(balance)}</td>
+      <td>${statusBadge(status)}</td>
+      <td><button class="btn btn-sm" onclick="recordPayment(${t.id})">Pay</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="empty"><div class="empty-icon">◈</div>No tuition records yet</td></tr>`;
+}
+
+async function recordPayment(tuitionId) {
+  const t = state.tuition.find(x => x.id == tuitionId);
+  const s = state.students.find(x => x.id == t.student);
+  const c = getCourse(s?.course);
+  const assessed = totalFee(c);
+  const paid = Number(t.amount_paid);
+  const balance = Math.max(0, assessed - paid);
+  document.getElementById('pay-info').innerHTML = `
+    <strong>${s.first_name} ${s.last_name}</strong><br>
+    Course: ${c.code} — ${c.name}<br>
+    Assessed: ${peso(assessed)}<br>
+    Paid: ${peso(paid)}<br>
+    Balance: ${peso(balance)}
+  `;
+  document.getElementById('pay-amount').value = balance;
+  document.getElementById('pay-tuition-id').value = tuitionId;
+  openModal('modal-pay');
+}
+
+async function submitPayment() {
+  const tuitionId = document.getElementById('pay-tuition-id').value;
+  const amount = Number(document.getElementById('pay-amount').value);
+  if (amount <= 0) return toast('Amount must be greater than 0', 'error');
+  try {
+    await api(`/tuition/${tuitionId}/pay/`, 'POST', { amount: amount });
+    closeModal('modal-pay');
+    toast('Payment recorded');
+    await loadAll();
+    renderTuition();
+  } catch (e) { toast('Error recording payment', 'error'); }
+}
+
+// ─── Reports ──────────────────────────────────────────────────
+function renderReports() {
+  // Enrollment summary
+  const enrollCounts = {};
+  state.enrollments.forEach(e => {
+    const c = getCourse(e.course);
+    enrollCounts[c.code] = (enrollCounts[c.code]||0) + 1;
+  });
+  const totalEnroll = Object.values(enrollCounts).reduce((a,b)=>a+b,0);
+  document.getElementById('report-enroll').innerHTML = Object.entries(enrollCounts).map(([code, count]) => {
+    const pct = Math.round(count / totalEnroll * 100);
+    return `<div class="bar-row"><div class="bar-label"><span>${code}</span><span class="mono">${count}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
+  }).join('') || '<div class="empty">No data</div>';
+
+  // Fee collection summary
+  const totalA = state.tuition.reduce((a,t) => {
+    const s = state.students.find(x => x.id == t.student);
+    const c = getCourse(s?.course);
+    return a + totalFee(c);
+  }, 0);
+  const totalP = state.tuition.reduce((a,t) => a + Number(t.amount_paid), 0);
+  const totalB = Math.max(0, totalA - totalP);
+  const pct = totalA > 0 ? Math.round(totalP/totalA*100) : 0;
+  document.getElementById('report-fees').innerHTML = `
+    <div class="bar-row"><div class="bar-label"><span>Collected</span><span class="mono">${peso(totalP)}</span></div><div class="bar-track"><div class="bar-fill green" style="width:${pct}%"></div></div></div>
+    <div class="bar-row"><div class="bar-label"><span>Outstanding</span><span class="mono">${peso(totalB)}</span></div><div class="bar-track"><div class="bar-fill red" style="width:${100-pct}%"></div></div></div>
+    <div style="font-size:12px;color:var(--text3);margin-top:8px;font-family:var(--mono)">Collection rate: ${pct}%</div>`;
+
+  // Full roster
+  document.getElementById('report-table').innerHTML = state.students.map(s => {
+    const c = getCourse(s.course);
+    const t = getTuition(s.id);
+    const assessed = totalFee(c);
+    const paid = Number(t?.amount_paid || 0);
+    const balance = Math.max(0, assessed - paid);
+    return `<tr>
+      <td>${s.first_name} ${s.last_name}</td>
+      <td class="mono">${s.student_id}</td>
+      <td>${c.code||'—'}</td>
+      <td>${s.year_level}</td>
+      <td>${statusBadge(s.status)}</td>
+      <td class="mono" style="color:${balance>0?'var(--red)':'var(--green)'}">${peso(balance)}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" class="empty"><div class="empty-icon">▤</div>No students yet</td></tr>`;
+}
+
+function printReport() {
+  window.print();
+}
+
+// ─── Init ─────────────────────────────────────────────────────
+checkApi();
+</script>
+</body>
+</html>

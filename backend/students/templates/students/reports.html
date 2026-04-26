@@ -1,0 +1,29 @@
+{% extends "students/base.html" %}
+
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<!-- REPORTS -->
+<div id="page-reports" class="page">
+  <div class="two-col" style="margin-bottom:16px">
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px">Enrollment summary</div>
+      <div id="report-enroll"><div class="loading">Loading...</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px">Fee collection summary</div>
+      <div id="report-fees"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-header">
+      <div class="section-title">Full student roster</div>
+      <button class="btn btn-sm" onclick="printReport()">Print report</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Name</th><th>Student ID</th><th>Course</th><th>Year</th><th>Status</th><th>Balance</th></tr></thead>
+      <tbody id="report-table"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "students/base.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="metrics-grid">
+    <div class="metric-card"><div class="metric-label">Students</div><div class="metric-val" id="m-students">—</div><div class="metric-sub">registered</div></div>
+    <div class="metric-card"><div class="metric-label">Courses</div><div class="metric-val" id="m-courses">—</div><div class="metric-sub">active</div></div>
+    <div class="metric-card"><div class="metric-label">Enrollments</div><div class="metric-val" id="m-enrollments">—</div><div class="metric-sub">this term</div></div>
+    <div class="metric-card"><div class="metric-label">Outstanding</div><div class="metric-val" id="m-balance" style="color:var(--red)">—</div><div class="metric-sub">unpaid balance</div></div>
+  </div>
+  <div class="two-col" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Recent students</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>ID</th><th>Status</th></tr></thead>
+        <tbody id="dash-students"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Enrollment by course</div>
+      <div id="dash-bars"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Fee collection overview</div>
+    <div id="dash-fees"><div class="loading">Loading...</div></div>
+  </div>
+</div>
+{% endblock %}

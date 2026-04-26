@@ -1,0 +1,52 @@
+{% extends "students/base.html" %}
+
+{% block page_title %}Enrollment Module{% endblock %}
+
+{% block content %}
+<!-- ENROLLMENT -->
+<div id="page-enrollment" class="page">
+  <div class="card">
+    <div class="tab-bar">
+      <div class="tab active" onclick="enrollTab('list',this)">Enrollment list</div>
+      <div class="tab" onclick="enrollTab('new',this)">New enrollment</div>
+    </div>
+    <div id="enroll-list-view">
+      <div class="form-group" style="max-width:420px;margin-bottom:14px;">
+        <label class="form-label">Search enrollments</label>
+        <input class="form-input search-box" id="enroll-list-search" type="search" placeholder="Search student, course, term, or status" oninput="renderEnrollment()" />
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Student</th><th>Course</th><th>Date enrolled</th><th>Term</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="enroll-table"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
+      </table></div>
+    </div>
+    <div id="enroll-new-view" style="display:none">
+      <div class="form-grid" style="max-width:480px">
+        <div class="form-group">
+          <label class="form-label">Search student</label>
+          <input class="form-input search-box" id="enroll-student-search" type="search" placeholder="Filter student list" oninput="populateStudentSelect('enroll-student-sel', this.value)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Student</label>
+          <select class="form-select" id="enroll-student-sel"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Course</label>
+          <select class="form-select" id="enroll-course-sel"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Term</label>
+          <select class="form-select" id="enroll-term">
+            <option>1st Semester 2025-26</option>
+            <option>2nd Semester 2025-26</option>
+            <option>Summer 2026</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" onclick="submitEnrollment()">Enroll student</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
